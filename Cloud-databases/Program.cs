@@ -22,8 +22,9 @@ namespace Cloud_databases
 
         static void Configure(HostBuilderContext Builder, IServiceCollection Services)
         {
-            //Services.AddDbContext<CloudDBContext>();            
+            Services.AddDbContext<CloudDBContext>();            
             Services.AddScoped<IMortgageService, MortgageService>();
+            Services.AddScoped<IMailService, MailService>();
         }
     }
 }

@@ -14,14 +14,7 @@ namespace DAL.Configurations
         public void Configure(EntityTypeBuilder<House> builder)
         {
             builder
-                .ToContainer("Houses");
-
-            builder
-                .Property(h => h.Id)
-                .ValueGeneratedOnAdd();
-
-            builder
-                .OwnsMany(h => h.Images);
+                .ToContainer("Houses");            
         }
     }
 }

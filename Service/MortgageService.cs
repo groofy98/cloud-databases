@@ -1,8 +1,11 @@
-﻿using Azure.Storage.Queues;
+﻿using Azure.Storage.Blobs;
+using Azure.Storage.Queues;
 using Azure.Storage.Queues.Models;
 using DAL;
+using Helpers;
 using HtmlAgilityPack;
 using IronPdf;
+using Microsoft.Extensions.Logging;
 using Models;
 using Newtonsoft.Json;
 using System;
@@ -16,7 +19,7 @@ namespace Service
     {
         public Task NewMortgageRequest(Applicant applicant);
         public Task HandleMortgageRequest();
-        public Task CreatePDF(Applicant applicant, double mortgage);
+        public Task<Uri> CreatePDF(Applicant applicant);
     }
 
     public class MortgageService : IMortgageService
@@ -24,17 +27,36 @@ namespace Service
         private readonly CloudDBContext _context;
         private readonly QueueClient _requestQueue;
         private readonly QueueClient _requestHandleQueue;
+        private readonly BlobContainerClient _containerClient;
+        private readonly ILogger _logger;
 
-        public MortgageService()
+        public MortgageService(CloudDBContext cloudDBContext, ILogger<MortgageService> logger)
         {
-            //_context = context;
+            _context = cloudDBContext;
+
+            _context.Database.EnsureCreated();
+
+            _logger = logger;
+
             string connectionString = Environment.GetEnvironmentVariable("AzureWebJobsStorage");
 
-            /*_requestQueue = new QueueClient(connectionString, "requestQueue");
+            // Get client for queue that handels new mortgage offers request
+            _requestQueue = new QueueClient(connectionString, "request-queue", new QueueClientOptions
+            {
+                MessageEncoding = QueueMessageEncoding.Base64
+            });
             _requestQueue.CreateIfNotExists();
+            
+            // The queue that handles the requests
+            _requestHandleQueue = new QueueClient(connectionString, "request-handle-queue", new QueueClientOptions
+            {
+                MessageEncoding = QueueMessageEncoding.Base64
+            });
+            _requestHandleQueue.CreateIfNotExists();
 
-            _requestHandleQueue = new QueueClient(connectionString, "requestHandleQueue");
-            _requestHandleQueue.CreateIfNotExists();*/
+            // Container client where the mortgage offer pdf's are stored
+            _containerClient = new BlobContainerClient(connectionString, "mortgages");
+            _containerClient.CreateIfNotExists();
         }
 
         public async Task NewMortgageRequest(Applicant applicant)
@@ -49,13 +71,19 @@ namespace Service
         // Copy messages to the handle cueue so they can be handled ayncronous.
         public async Task HandleMortgageRequest()
         {
-            QueueMessage[] messages = _requestQueue.ReceiveMessages();
+            int count = 0;
 
-            foreach(var message in messages)
+            while(true)
             {
+                QueueMessage message = await _requestQueue.ReceiveMessageAsync();
+
+                if (message == null)
+                    break;
+
                 await _requestHandleQueue.SendMessageAsync(message.Body);
+                count++;
             }
-            
+            _logger.LogInformation($"Moved {count} messages to handle queue at {DateTime.Now}");
         }
 
         public double CalculateMortgage(Applicant applicant)
@@ -67,25 +95,27 @@ namespace Service
             return result;
         }
 
-        public async Task CreatePDF(Applicant applicant, double mortgage)
+        public async Task<Uri> CreatePDF(Applicant applicant)
         {
-            var path = @"C:\Users\groof\source\repos\Cloud-databases\Cloud-databases\Resources\offer.html";
+            var html = Resources.ResourceManager.GetString("offer");
             var doc = new HtmlDocument();
-            doc.Load(path);            
+            doc.LoadHtml(html);
+            doc.GetElementbyId("dateCreated").InnerHtml = $"Created: {DateTime.Now.ToString("MMMM dd, yyyy")}";
             doc.GetElementbyId("applicant").InnerHtml = $"{applicant.FirstName} {applicant.LastName}<br />{applicant.Email}";
             doc.GetElementbyId("income").InnerHtml = $"€ {applicant.Income:n2}";            
             doc.GetElementbyId("loan").InnerHtml = $"€ {applicant.Loans:n2}";            
-            doc.GetElementbyId("mortgageproposal").InnerHtml = $"Mortgage proposal € {mortgage:n2}";
+            doc.GetElementbyId("mortgageproposal").InnerHtml = $"Mortgage proposal € {CalculateMortgage(applicant):n2}";
             
             // turn html to pdf
             var pdf = ChromePdfRenderer.StaticRenderHtmlAsPdf(doc.DocumentNode.InnerHtml);
+            
             // save resulting pdf into file
-            using (var fileStream = File.Create(@"C:\Users\groof\source\repos\Cloud-databases\Cloud-databases\Resources\yolo.pdf"))
-            {                
-                pdf.Stream.Seek(0, SeekOrigin.Begin);
-                pdf.Stream.CopyTo(fileStream);
-            }
+            pdf.Stream.Seek(0, SeekOrigin.Begin);
+            var response = await _containerClient.UploadBlobAsync(applicant.Id.ToString() + ".pdf", pdf.Stream);
+            var blobClient = _containerClient.GetBlobClient(applicant.Id.ToString() + ".pdf");
 
+            return SasHelper.GetServiceSasUriForBlob(blobClient);
+            
         }
         
         

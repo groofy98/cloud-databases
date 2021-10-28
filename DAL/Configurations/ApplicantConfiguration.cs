@@ -14,11 +14,7 @@ namespace DAL.Configurations
         public void Configure(EntityTypeBuilder<Applicant> builder)
         {
             builder
-                .ToContainer("Applicant");
-
-            builder
-                .Property(b => b.Id)
-                .ValueGeneratedOnAdd();            
+                .ToContainer("Applicants");                   
         }
     }
 }

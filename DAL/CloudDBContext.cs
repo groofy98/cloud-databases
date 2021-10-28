@@ -18,9 +18,7 @@ namespace DAL
 
         protected override void OnModelCreating(ModelBuilder modelBuilder)
         {
-            modelBuilder.HasDefaultContainer("Store");
-
-            Database.EnsureCreated();
+            modelBuilder.HasDefaultContainer("Store");            
 
             modelBuilder.ApplyConfiguration(new HouseConfiguration());
             modelBuilder.ApplyConfiguration(new ApplicantConfiguration());
