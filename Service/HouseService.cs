@@ -17,9 +17,9 @@ namespace Service
     public interface IHouseService
     {
         public Task AddHouse(House house);
-        public Task RemoveHouse(House house);
+        public Task RemoveHouse(Guid id);
         public Task<List<House>> GetAllHouses();
-        public Task<Image> AddImgageToHouse(Guid id, FilePart file);
+        public Task<Image> AddImageToHouse(Guid id, FilePart file);
     }
     public class HouseService : IHouseService
     {
@@ -48,7 +48,7 @@ namespace Service
             await _context.SaveChangesAsync();
         }
 
-        public async Task<Image> AddImgageToHouse(Guid id, FilePart file)
+        public async Task<Image> AddImageToHouse(Guid id, FilePart file)
         {
             // Find the house the image needs to be added to
             House house = await _context.Houses.FindAsync(id);
@@ -86,9 +86,9 @@ namespace Service
             return await _context.Houses.ToListAsync();
         }
 
-        public async Task RemoveHouse(House house)
+        public async Task RemoveHouse(Guid id)
         {
-            house = await _context.Houses.FindAsync(house);
+            var house = await _context.Houses.FindAsync(id);
             _context.Houses.Remove(house);
             await _context.SaveChangesAsync();
         }

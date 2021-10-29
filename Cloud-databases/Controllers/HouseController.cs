@@ -67,18 +67,37 @@ namespace Cloud_databases.Controllers
 		}
 
 		[Function(nameof(HouseController.AddImage))]
-		[OpenApiOperation(operationId: "AddImage", tags: new[] { "House" }, Summary = "Add a new image to a house", Description = "Adds a new image to a house", Visibility = OpenApiVisibilityType.Important)]
-		[OpenApiResponseWithBody(statusCode: HttpStatusCode.OK, contentType: "application/json", bodyType: typeof(House), Summary = "Successful operation", Description = "Successful operation")]		
+		[OpenApiOperation(operationId: "AddImage", tags: new[] { "House" }, Summary = "Add a new image to a house", Description = "Adds a new image to a house, request needs to have a form-data body with the file", Visibility = OpenApiVisibilityType.Important)]
+		[OpenApiResponseWithBody(statusCode: HttpStatusCode.OK, contentType: "application/json", bodyType: typeof(House), Summary = "Successful operation", Description = "Successful operation")]
 		[OpenApiParameter(name: "houseId", In = ParameterLocation.Path, Required = true, Type = typeof(Guid), Summary = "ID of house to add image to", Description = "ID of house to add image to", Visibility = OpenApiVisibilityType.Important)]
 		public async Task<HttpResponseData> AddImage([HttpTrigger(AuthorizationLevel.Anonymous, "POST", Route = "houses/{houseId}/images")] HttpRequestData req, FunctionContext executionContext, string houseId)
 		{
-			var parsedFormBody = await MultipartFormDataParser.ParseAsync(req.Body);
-			var file = parsedFormBody.Files[0];
+			FilePart file;
+
+			try
+            {
+				// Parse image from body
+				var parsedFormBody = await MultipartFormDataParser.ParseAsync(req.Body);
+				file = parsedFormBody.Files[0];
+
+				// Input validation
+				if (!file.ContentType.Contains("jpg") && !file.ContentType.Contains("png"))
+				{
+					var error = req.CreateResponse(HttpStatusCode.BadRequest);
+					await error.WriteAsJsonAsync(new { Error = "Please submit either a png or jpg" });
+					return error;
+				}
+            } catch (Exception e)
+            {
+				_ = e;
+				var error = req.CreateResponse(HttpStatusCode.BadRequest);
+				await error.WriteAsJsonAsync(new { Error = "No valid image" });
+				return error;
+			}
 
 			var Id = Guid.Parse(houseId);
-			string requestBody = await req.ReadAsStringAsync();
 
-			var image = _houseService.AddImgageToHouse(Id, file);
+			Image image = await _houseService.AddImageToHouse(Id, file);
 
 			var response = req.CreateResponse(HttpStatusCode.OK);
 
@@ -88,7 +107,7 @@ namespace Cloud_databases.Controllers
 		}
 
 		[Function(nameof(HouseController.GetHouses))]
-		[OpenApiOperation(operationId: "AddHouse", tags: new[] { "House" }, Summary = "Gets a list of all houses", Description = "Gets a list of all houses", Visibility = OpenApiVisibilityType.Important)]
+		[OpenApiOperation(operationId: "GetHouses", tags: new[] { "House" }, Summary = "Gets a list of all houses", Description = "Gets a list of all houses", Visibility = OpenApiVisibilityType.Important)]
 		[OpenApiResponseWithBody(statusCode: HttpStatusCode.OK, contentType: "application/json", bodyType: typeof(List<House>), Summary = "Successful operation", Description = "Successful operation")]		
 		public async Task<HttpResponseData> GetHouses([HttpTrigger(AuthorizationLevel.Anonymous, "GET", Route = "houses")] HttpRequestData req, FunctionContext executionContext)
 		{
@@ -102,5 +121,17 @@ namespace Cloud_databases.Controllers
 
 			return response;
 		}
+
+		[Function(nameof(HouseController.RemoveHouse))]
+		[OpenApiOperation(operationId: "RemoveHouse", tags: new[] { "House" }, Summary = "Removes a house by id", Description = "Removes a house by id", Visibility = OpenApiVisibilityType.Important)]
+		[OpenApiParameter(name: "houseId", In = ParameterLocation.Path, Required = true, Type = typeof(Guid), Summary = "ID of house to remove", Description = "ID of house to remove", Visibility = OpenApiVisibilityType.Important)]
+		public async Task<HttpResponseData> RemoveHouse([HttpTrigger(AuthorizationLevel.Anonymous, "DELETE", Route = "houses/{houseId}")] HttpRequestData req, FunctionContext executionContext, string houseId)
+        {
+			await _houseService.RemoveHouse(Guid.Parse(houseId));
+
+			var response = req.CreateResponse(HttpStatusCode.OK);
+
+			return response;
+        }
 	}
 }
