@@ -11,14 +11,13 @@ namespace DAL
         public DbSet<Applicant> Applicants {  get; set; }
 
         protected override void OnConfiguring(DbContextOptionsBuilder optionsBuilder)
-            => optionsBuilder.UseCosmos(
-                Environment.GetEnvironmentVariable("CosmosDBUrl"),
+            => optionsBuilder.UseCosmos(                
                 Environment.GetEnvironmentVariable("ConnectionString"),
-                databaseName: Environment.GetEnvironmentVariable("DatabaseName"));
+                databaseName: "HousingDB");
 
         protected override void OnModelCreating(ModelBuilder modelBuilder)
         {
-            modelBuilder.HasDefaultContainer("Store");            
+            modelBuilder.HasDefaultContainer("Store");
 
             modelBuilder.ApplyConfiguration(new HouseConfiguration());
             modelBuilder.ApplyConfiguration(new ApplicantConfiguration());

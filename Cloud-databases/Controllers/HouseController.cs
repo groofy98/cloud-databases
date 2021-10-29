@@ -81,7 +81,7 @@ namespace Cloud_databases.Controllers
 				file = parsedFormBody.Files[0];
 
 				// Input validation
-				if (!file.ContentType.Contains("jpg") && !file.ContentType.Contains("png"))
+				if (!file.ContentType.Contains("jpeg") && !file.ContentType.Contains("png"))
 				{
 					var error = req.CreateResponse(HttpStatusCode.BadRequest);
 					await error.WriteAsJsonAsync(new { Error = "Please submit either a png or jpg" });

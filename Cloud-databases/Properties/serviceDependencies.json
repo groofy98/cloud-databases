@@ -1,11 +1,10 @@
 {
   "dependencies": {
-    "appInsights1": {
-      "type": "appInsights"
-    },
-    "storage1": {
-      "type": "storage",
-      "connectionId": "AzureWebJobsStorage"
+    "mssql1": {
+      "ignored": "true",
+      "suggestion": "true",
+      "type": "mssql",
+      "connectionId": ""
     }
   }
 }
