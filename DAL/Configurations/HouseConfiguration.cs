@@ -14,7 +14,10 @@ namespace DAL.Configurations
         public void Configure(EntityTypeBuilder<House> builder)
         {
             builder
-                .ToContainer("Houses");            
+                .ToContainer("Houses");
+
+            builder.
+                OwnsMany(x => x.Images);
         }
     }
 }

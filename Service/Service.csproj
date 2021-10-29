@@ -8,6 +8,7 @@
     <PackageReference Include="Azure.Storage.Blobs" Version="12.10.0" />
     <PackageReference Include="Azure.Storage.Queues" Version="12.8.0" />
     <PackageReference Include="HtmlAgilityPack" Version="1.11.37" />
+    <PackageReference Include="HttpMultipartParser" Version="5.0.1" />
     <PackageReference Include="IronPdf" Version="2021.9.3737" />
     <PackageReference Include="SendGrid" Version="9.24.4" />
   </ItemGroup>

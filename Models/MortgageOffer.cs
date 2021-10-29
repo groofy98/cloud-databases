@@ -8,7 +8,7 @@ namespace Models
 {
     public class MortgageOffer
     {
-        public Applicant Applicant {  get; set; }
-        public Uri PDFUrl {  get; set; }
+        public Applicant Applicant {  get; set; }        
+        public Uri PDFUrl {  get; set; } // The Sas token to acces the created PDF file
     }
 }

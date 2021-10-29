@@ -81,6 +81,7 @@ namespace Service
                     break;
 
                 await _requestHandleQueue.SendMessageAsync(message.Body);
+                await _requestQueue.DeleteMessageAsync(message.MessageId, message.PopReceipt);
                 count++;
             }
             _logger.LogInformation($"Moved {count} messages to handle queue at {DateTime.Now}");

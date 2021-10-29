@@ -15,8 +15,8 @@ namespace Models
         
         public string Street { get; set; }
         
-        public string Town { get; set; } 
-        
-        //public List<string> Images {  get; set; }
+        public string Town { get; set; }
+
+        public List<Image> Images { get; set; } = new ();
     }
 }
