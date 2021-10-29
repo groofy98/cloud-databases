@@ -28,3 +28,6 @@ As soon as the pdf is created a Sas Token will be created as well which wil be a
 The houses api can list houses, add houses, remove houses and add images to houses.
 These images are added to the blob storage which is publicly available.
 The image needs to be send to /api/houses/{houseId}/images with the image file attached in a form-data body.
+
+### Used resources
+![image](https://user-images.githubusercontent.com/33691096/139484773-90d5941c-1e24-4287-89b3-5db324d8b69e.png)
